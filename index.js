@@ -4,13 +4,10 @@ const { stdin: input, stdout: output } = require('process');
 const rl = readline.createInterface({ input, output });
 const BASE_URL = 'https://gutendex.com/books?search=';
 
-async function prompt(query) {
-  return await rl.question(query);
-}
-
-async function bookSearch(query) {
+async function bookSearch() {
+  const query = await rl.question("Search title/author: ");
   try {
-    const res = await fetch(BASE_URL + encodeURIComponent(query));
+    const res = await fetch(BASE_URL + encodeURIComponent(query.trim()));
     const data = await res.json();
     return data.results;
   } catch (err) {
@@ -19,6 +16,7 @@ async function bookSearch(query) {
   }
 }
 
+// function to get the id of the book from the user and fetch the text/plain format from the formats available of the book
 async function fetchBook(bookId) {
   try {
     const res = await fetch(`https://gutendex.com/books/${bookId}`);
@@ -40,8 +38,8 @@ async function fetchBook(bookId) {
     console.error("Error fetching book text:", err.message);
   }
 }
-
-async function readBook(text, pageSize = 1000) {
+// function to display the book that the user selected with the options to either go next, previous, or quit
+async function readBook(text, pageSize = 1500) {
   const pages = [];
   for (let i = 0; i < text.length; i += pageSize) {
     pages.push(text.slice(i, i + pageSize));
@@ -51,23 +49,22 @@ async function readBook(text, pageSize = 1000) {
     console.clear();
     console.log(`\n--- Page ${currentPage + 1} of ${pages.length} ---\n`);
     console.log(pages[currentPage]);
-    console.log("\n[n] Next | [p] Prev | [q] Quit");
+    console.log("\n next | prev | quit");
 
-    const command = await prompt("Command: ");
-    if (command === 'n' && currentPage < pages.length - 1) {
+    const command = await rl.question("enter the choice: ");
+    if (command === 'next' && currentPage < pages.length - 1) {
       currentPage++;
-    } else if (command === 'p' && currentPage > 0) {
+    } else if (command === 'prev' && currentPage > 0) {
       currentPage--;
-    } else if (command === 'q') {
+    } else if (command === 'quit') {
       break;
     }
   }
 }
-
+// function that prompts the user to input entries, fetch the result based on the entry and display the content
 async function menu() {
   console.log("\n Welcome to Gutenberg");
-  const query = await prompt("Search title/author: ");
-  const results = await bookSearch(query);
+  const results = await bookSearch();
   if (results.length === 0) {
     console.log("No results found.");
     return await menu();
@@ -78,7 +75,7 @@ async function menu() {
     console.log(`${index + 1}. ${book.title} by ${authors}`);
   });
 
-  const choice = await prompt("\nSelect book number or 0 to go back): ");
+  const choice = await rl.question("\nSelect book number or 0 to go back: ");
   const index = parseInt(choice) - 1;
   if (index >= 0 && index < results.length) {
     const book = results[index];
